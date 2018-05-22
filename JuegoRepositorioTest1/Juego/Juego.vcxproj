@@ -76,7 +76,18 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)allegro_5.1.12_x86\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)allegro_5.1.12_x86\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>allegro-debug.lib;allegro_main-debug.lib;allegro_image-debug.lib;allegro_color-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_color-debug-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_image-debug-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_main-debug-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro-debug-5.1.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
