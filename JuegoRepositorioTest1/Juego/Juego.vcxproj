@@ -105,11 +105,20 @@ copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro-debug-5.1.dll" "$(OutDir)"</C
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)allegro_5.1.12_x86\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)allegro_5.1.12_x86\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>allegro.lib;allegro_main.lib;allegro_image.lib;allegro_color.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_color-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_image-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro_main-5.1.dll" "$(OutDir)"
+copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro-5.1.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -126,7 +135,9 @@ copy "$(SolutionDir)allegro_5.1.12_x86\bin\allegro-debug-5.1.dll" "$(OutDir)"</C
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Juego.cpp" />
+    <ClCompile Include="Juego.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
