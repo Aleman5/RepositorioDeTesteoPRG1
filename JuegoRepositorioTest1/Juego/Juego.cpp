@@ -10,20 +10,30 @@ ALLEGRO_DISPLAY *display = NULL;
 ALLEGRO_BITMAP *player = NULL;
 ALLEGRO_BITMAP *enemie = NULL;
 
+//enum Direction {UP, DOWN, LEFT, RIGHT};
+
+const float fps = 60.0;
+
+bool done = false;
+bool draw = true;
+int playerX = 10;
+int playerY = 10;
+//int playerDir = DOWN;
+int playerMovementSpeed = 4;
+int enemieX = 400;
+int enemieY = 10;
+
 if (!al_init()) {
-	al_show_native_message_box(display, "Error", "Error", "Failed to initialize allegro!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
 	return 0;
 }
 
 if (!al_init_image_addon()) {
-	al_show_native_message_box(display, "Error", "Error", "Failed to initialize al_init_image_addon!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
 	return 0;
 }
 
 display = al_create_display(800, 600);
 
 if (!display) {
-	al_show_native_message_box(display, "Error", "Error", "Failed to initialize display!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
 	return 0;
 }
 
@@ -31,21 +41,64 @@ enemie = al_load_bitmap("Enemigo.png");
 player = al_load_bitmap("Personaje.png");
 
 if (!player || !enemie) {
-	al_show_native_message_box(display, "Error", "Error", "Failed to load image!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
 	al_destroy_display(display);
 	return 0;
 }
 
+al_install_keyboard();
 
-al_draw_bitmap(player, 0, 0, 0);
-al_draw_bitmap(enemie, 400, 10, 0);
+ALLEGRO_KEYBOARD_STATE keystate;
+ALLEGRO_TIMER *timer = al_create_timer(1.0/fps);
+ALLEGRO_EVENT_QUEUE *eventQueue = al_create_event_queue();
+al_register_event_source(eventQueue, al_get_keyboard_event_source());
+al_register_event_source(eventQueue, al_get_timer_event_source(timer));
 
-al_flip_display();
-al_rest(5.0);
+al_start_timer(timer);
+
+while (!done){
+	ALLEGRO_EVENT events;
+	al_wait_for_event(eventQueue, &events);
+
+	if (events.type == ALLEGRO_EVENT_KEY_UP){
+		switch (events.keyboard.keycode){
+		case ALLEGRO_KEY_ESCAPE:
+			done = true;
+			break;
+		}
+	}
+	if (events.type == ALLEGRO_EVENT_TIMER){
+
+		al_get_keyboard_state(&keystate);
+
+		if (al_key_down(&keystate, ALLEGRO_KEY_DOWN)){
+			playerY += playerMovementSpeed;
+		}
+		else if (al_key_down(&keystate, ALLEGRO_KEY_UP)){
+			playerY -= playerMovementSpeed;
+		}
+		else if (al_key_down(&keystate, ALLEGRO_KEY_RIGHT)) {
+			playerX += playerMovementSpeed;
+		}
+		else if (al_key_down(&keystate, ALLEGRO_KEY_LEFT)) {
+			playerX -= playerMovementSpeed;
+		}
+
+		draw = true;
+	}
+
+	if(draw){
+		draw = false;
+		al_draw_bitmap(player, playerX, playerY, 0);
+		al_draw_bitmap(enemie, enemieX, enemieY, 0);
+		al_flip_display();
+		al_clear_to_color(al_map_rgb(0, 0, 0));
+	}
+}
 
 al_destroy_display(display);
 al_destroy_bitmap(player);
 al_destroy_bitmap(enemie);
+al_destroy_timer(timer);
 
 return 0;
 }
