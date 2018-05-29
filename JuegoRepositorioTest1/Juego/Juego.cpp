@@ -3,6 +3,12 @@
 #include "allegro5/allegro_image.h"
 #include "allegro5/allegro_native_dialog.h"
 
+struct Object{
+	ALLEGRO_BITMAP *image;
+	int x;
+	int y;
+	int movSpeed;
+};
 
 bool Collision(int pX, int pY, int eX, int eY, int pWidth, int pHeight, int eWidth, int eHeight){
 	if (pX + pWidth<eX || pX > eX + eWidth || pY + pHeight < eY || pY > eY + eHeight){
@@ -17,8 +23,16 @@ bool Collision(int pX, int pY, int eX, int eY, int pWidth, int pHeight, int eWid
 int main(int argc, char **argv) {
 
 ALLEGRO_DISPLAY *display = NULL;
-ALLEGRO_BITMAP *player = NULL;
-ALLEGRO_BITMAP *enemie = NULL;
+
+Object player;
+player.x = 10;
+player.y = 10;
+player.movSpeed = 4;
+
+Object enemy;
+enemy.x = 400;
+enemy.y = 0;
+enemy.movSpeed = 5;
 
 const float fps = 60.0;
 
@@ -28,14 +42,7 @@ bool draw = true;
 int displayWidth = 800;
 int displayHeight = 600;
 
-int playerX = 10;
-int playerY = 10;
-int playerMovementSpeed = 4;
-
 bool enemieGoingUp = false;
-int enemieX = 400;
-int enemieY = 0;
-int enemieMovementSpeed = 5;
 
 if (!al_init()) {
 	return 0;
@@ -51,10 +58,10 @@ if (!display) {
 	return 0;
 }
 
-enemie = al_load_bitmap("Enemigo.png");
-player = al_load_bitmap("Personaje.png");
+player.image = al_load_bitmap("Personaje.png");
+enemy.image = al_load_bitmap("Enemigo.png");
 
-if (!player || !enemie) {
+if (!player.image || !enemy.image) {
 	al_destroy_display(display);
 	return 0;
 }
@@ -85,34 +92,34 @@ while (!done){
 
 		al_get_keyboard_state(&keystate);
 		if (al_key_down(&keystate, ALLEGRO_KEY_DOWN)){
-			playerY += playerMovementSpeed;
+			player.y += player.movSpeed;
 		}
 		else if (al_key_down(&keystate, ALLEGRO_KEY_UP)){
-			playerY -= playerMovementSpeed;
+			player.y -= player.movSpeed;
 		}
 		else if (al_key_down(&keystate, ALLEGRO_KEY_RIGHT)) {
-			playerX += playerMovementSpeed;
+			player.x += player.movSpeed;
 		}
 		else if (al_key_down(&keystate, ALLEGRO_KEY_LEFT)) {
-			playerX -= playerMovementSpeed;
+			player.x -= player.movSpeed;
 		}
 
 
-		if (Collision(playerX, playerY, enemieX, enemieY, al_get_bitmap_width(player), al_get_bitmap_height(player), al_get_bitmap_width(enemie), al_get_bitmap_height(enemie))){
+		if (Collision(player.x, player.y, enemy.x, enemy.y, al_get_bitmap_width(player.image), al_get_bitmap_height(player.image), al_get_bitmap_width(enemy.image), al_get_bitmap_height(enemy.image))){
 			done = true;
 		}
 
 
 		if (!enemieGoingUp){
-			enemieY += enemieMovementSpeed;
+			enemy.y += enemy.movSpeed;
 		}
 		if (enemieGoingUp){
-			enemieY -= enemieMovementSpeed;
+			enemy.y -= enemy.movSpeed;
 		}
-		if (enemieY + al_get_bitmap_height(enemie) >= displayHeight){
+		if (enemy.y + al_get_bitmap_height(enemy.image) >= displayHeight){
 			enemieGoingUp = true;
 		}
-		else if (enemieY <= 0){
+		else if (enemy.y <= 0){
 			enemieGoingUp = false;
 		}
 
@@ -121,16 +128,16 @@ while (!done){
 
 	if(draw){
 		draw = false;
-		al_draw_bitmap(player, playerX, playerY, 0);
-		al_draw_bitmap(enemie, enemieX, enemieY, 0);
+		al_draw_bitmap(player.image, player.x, player.y, 0);
+		al_draw_bitmap(enemy.image, enemy.x, enemy.y, 0);
 		al_flip_display();
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 	}
 }
 
 al_destroy_display(display);
-al_destroy_bitmap(player);
-al_destroy_bitmap(enemie);
+al_destroy_bitmap(player.image);
+al_destroy_bitmap(enemy.image);
 al_destroy_timer(timer);
 
 return 0;
