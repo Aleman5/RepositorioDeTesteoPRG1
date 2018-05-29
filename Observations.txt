@@ -1,0 +1,3 @@
+- Están las dependencias x86. No deberían estar ya que no estamos trabajando de manera estática.
+
+- No hay colisión con los bordes de la pantalla.
