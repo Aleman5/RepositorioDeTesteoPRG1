@@ -6,6 +6,8 @@
 
 class Menu {
 public:
-	void Portada(BITMAP* p);
+	Menu();
+	~Menu();
+	bool Portada();
 };
 #endif // MENU_H
