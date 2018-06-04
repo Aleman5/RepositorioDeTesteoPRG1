@@ -61,6 +61,30 @@ int main(int argc, char **argv) {
 
 ALLEGRO_DISPLAY *display = NULL;
 
+if (!al_init()) {
+	return 0;
+}
+
+if (!al_init_image_addon()) {
+	return 0;
+}
+
+display = al_create_display(displayWidth, displayHeight);
+
+if (!display) {
+	return 0;
+}
+
+const float fps = 60.0;
+
+bool done = false;
+bool draw = true;
+
+Menu* menu = new Menu();
+if (!menu->Portada())
+	done = true;
+delete menu;
+
 // Elements creation
 Player player;
 player.x = 10;
@@ -91,25 +115,7 @@ enemy4.y = 0;
 enemy4.movSpeed = 9;
 enemy4.enemieGoingUp = false;
 
-const float fps = 60.0;
 
-bool done = false;
-bool draw = true;
-
-
-if (!al_init()) {
-	return 0;
-}
-
-if (!al_init_image_addon()) {
-	return 0;
-}
-
-display = al_create_display(displayWidth, displayHeight);
-
-if (!display) {
-	return 0;
-}
 
 // Images load
 player.image = al_load_bitmap("Personaje.png");
