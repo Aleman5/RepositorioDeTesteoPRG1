@@ -8,19 +8,31 @@
 const int displayWidth = 800;
 const int displayHeight = 600;
 
+enum DirectionPlayer {
+	UP,
+	DOWN,
+	RIGHT,
+	LEFT
+};
+
 // Made Structs to make the code easier to read. <------ By Abecasis Alejandro
-// PD: I know that "Player" and "Bullet" are exactly the same, but I prefer like this because its easier to know who is who.
 struct Player{
 	ALLEGRO_BITMAP *image;
 	int x;
 	int y;
+	int oriX; // Original 'x' position.
+	int oriY; // Original 'y' position.
 	int movSpeed;
+	int health;
+	DirectionPlayer dir;
 };
 struct Bullet {
 	ALLEGRO_BITMAP *image;
 	int x;
 	int y;
 	int movSpeed;
+	bool direction; // 'false' moves horizontal, 'true' moves vertical
+	int dirVel;   // '1' moves right or down, '-1' moves up or left, '0' doesn´t move
 };
 struct Enemy {
 	ALLEGRO_BITMAP *image;
@@ -28,15 +40,30 @@ struct Enemy {
 	int y;
 	int movSpeed;
 	bool enemieGoingUp;
+	bool isAlive;
 };
 
 // Made Collision easier to fill the parameters. <------ By Abecasis Alejandro
-bool Collision(Player &player, Enemy &enemy) {
+bool CollisionPlaEne(Player &player, Enemy &enemy) {
 	if (player.x + al_get_bitmap_width(player.image)  < enemy.x || player.x > enemy.x + al_get_bitmap_width(enemy.image)  ||
 		player.y + al_get_bitmap_height(player.image) < enemy.y || player.y > enemy.y + al_get_bitmap_height(enemy.image)) {
 		return false;
 	}
 	else{
+		player.health--;
+		player.x = player.oriX;
+		player.y = player.oriY;
+		return true;
+	}
+}
+
+bool CollisionBulEne(Bullet &bullet, Enemy &enemy) {
+	if (bullet.x + al_get_bitmap_width(bullet.image)  < enemy.x || bullet.x > enemy.x + al_get_bitmap_width(enemy.image) ||
+		bullet.y + al_get_bitmap_height(bullet.image) < enemy.y || bullet.y > enemy.y + al_get_bitmap_height(enemy.image)) {
+		return false;
+	}
+	else {
+		enemy.isAlive = false;
 		return true;
 	}
 }
@@ -87,45 +114,57 @@ delete menu;
 
 // Elements creation
 Player player;
-player.x = 10;
-player.y = 10;
+player.x = player.oriX = 10;
+player.y = player.oriY = 10;
 player.movSpeed = 4;
+player.health = 3;
+player.dir = RIGHT;
+
+Bullet bullet;
+bullet.x = -8;
+bullet.y = -8;
+bullet.movSpeed = 8;
+bullet.direction = false;
+bullet.dirVel = 0;
 
 Enemy enemy1;
 enemy1.x = 200;
 enemy1.y = 20;
 enemy1.movSpeed = 2;
 enemy1.enemieGoingUp = false;
+enemy1.isAlive = true;
 
 Enemy enemy2;
 enemy2.x = 350;
 enemy2.y = 300;
 enemy2.movSpeed = 4;
 enemy2.enemieGoingUp = false;
+enemy2.isAlive = true;
 
 Enemy enemy3;
 enemy3.x = 500;
 enemy3.y = 250;
 enemy3.movSpeed = 8;
 enemy3.enemieGoingUp = true;
+enemy3.isAlive = true;
 
 Enemy enemy4;
 enemy4.x = 650;
 enemy4.y = 0;
 enemy4.movSpeed = 9;
 enemy4.enemieGoingUp = false;
-
-
+enemy4.isAlive = true;
 
 // Images load
 player.image = al_load_bitmap("Personaje.png");
+bullet.image = al_load_bitmap("RedBullet.png");
 enemy1.image = al_load_bitmap("Enemigo.png");
 enemy2.image = al_load_bitmap("Enemigo.png");
 enemy3.image = al_load_bitmap("Enemigo.png");
 enemy4.image = al_load_bitmap("Enemigo.png");
 
 // Images check
-if (!player.image || !enemy1.image || !enemy2.image || !enemy3.image || !enemy4.image) {
+if (!player.image || !bullet.image || !enemy1.image || !enemy2.image || !enemy3.image || !enemy4.image) {
 	al_destroy_display(display);
 	return 0;
 }
@@ -144,62 +183,138 @@ while (!done){
 	ALLEGRO_EVENT events;
 	al_wait_for_event(eventQueue, &events);
 
-	if (events.type == ALLEGRO_EVENT_KEY_UP){
+	if (events.type == ALLEGRO_EVENT_KEY_UP)
 		switch (events.keyboard.keycode){
 		case ALLEGRO_KEY_ESCAPE:
 			done = true;
 			break;
 		}
 
-	}
-
 	if (events.type == ALLEGRO_EVENT_TIMER){
 
 		// Checks player's movement's input
 		al_get_keyboard_state(&keystate);
 		if (al_key_down(&keystate, ALLEGRO_KEY_DOWN)){
-			player.y += player.movSpeed;
+			if(player.y + al_get_bitmap_height(player.image) + player.movSpeed < displayHeight)
+				player.y += player.movSpeed;
+			player.dir = DOWN;
 		}
 		else if (al_key_down(&keystate, ALLEGRO_KEY_UP)){
-			player.y -= player.movSpeed;
+			if(player.y - player.movSpeed > 0)
+				player.y -= player.movSpeed;
+			player.dir = UP;
 		}
-		else if (al_key_down(&keystate, ALLEGRO_KEY_RIGHT)) {
-			player.x += player.movSpeed;
+		else if (al_key_down(&keystate, ALLEGRO_KEY_RIGHT)){
+			if (player.x + al_get_bitmap_width(player.image) + player.movSpeed < displayWidth)
+				player.x += player.movSpeed;
+			player.dir = RIGHT;
 		}
-		else if (al_key_down(&keystate, ALLEGRO_KEY_LEFT)) {
-			player.x -= player.movSpeed;
+		else if (al_key_down(&keystate, ALLEGRO_KEY_LEFT)){
+			if (player.x - player.movSpeed > 0)
+				player.x -= player.movSpeed;
+			player.dir = LEFT;
+		}
+		if (al_key_down(&keystate, ALLEGRO_KEY_SPACE)){
+			if (bullet.dirVel == 0){
+				switch (player.dir) // Checks the actually player's moving direction
+				{
+				case UP:
+					bullet.direction = true;
+					bullet.dirVel = -1;
+					break;
+				case DOWN:
+					bullet.direction = true;
+					bullet.dirVel = 1;
+					break;
+				case RIGHT:
+					bullet.direction = false;
+					bullet.dirVel = 1;
+					break;
+				case LEFT:
+					bullet.direction = false;
+					bullet.dirVel = -1;
+					break;
+				}
+				if (!bullet.direction){		// Horizontal Axis
+					if (bullet.dirVel > 0) {	// Right
+						bullet.x = player.x + al_get_bitmap_width(player.image);
+						bullet.y = player.y + al_get_bitmap_height(player.image) / 2;
+					}
+					else {						// Left
+						bullet.x = player.x;
+						bullet.y = player.y + al_get_bitmap_height(player.image) / 2;
+					}
+				}
+				else {						// Vertical Axis
+					if (bullet.dirVel > 0) {	// Down
+						bullet.x = player.x + al_get_bitmap_width(player.image) / 2;
+						bullet.y = player.y + al_get_bitmap_height(player.image);
+					}
+					else {						// Up
+						bullet.x = player.x + al_get_bitmap_width(player.image) / 2;
+						bullet.y = player.y;
+					}
+				}
+			}
 		}
 
+		// Checks Bullet's movement
+		if (bullet.dirVel != 0){
+			if (bullet.direction == false) {
+				if (bullet.x > -al_get_bitmap_width(bullet.image) && bullet.x + al_get_bitmap_width(bullet.image) < displayWidth + al_get_bitmap_width(bullet.image))
+					bullet.x += bullet.movSpeed * bullet.dirVel;
+				else
+					bullet.dirVel = 0;
+			}
+			else {
+				if (bullet.y > -al_get_bitmap_width(bullet.image) && bullet.y + al_get_bitmap_width(bullet.image) < displayHeight + al_get_bitmap_width(bullet.image))
+					bullet.y += bullet.movSpeed * bullet.dirVel;
+				else
+					bullet.dirVel = 0;
+			}
+		}
 
-		// Checks Collision Player - Enemies
-		if (Collision(player, enemy1)){
-			done = true;
+		// Checks all the functions where the enemies participates in
+		if(enemy1.isAlive){
+			CheckMovement(enemy1);
+			CollisionPlaEne(player, enemy1);
+			CollisionBulEne(bullet, enemy1);
 		}
-		else if (Collision(player, enemy2)) {
-			done = true;
+		if(enemy2.isAlive){
+			CheckMovement(enemy2);
+			CollisionPlaEne(player, enemy2);
+			CollisionBulEne(bullet, enemy2);
 		}
-		else if (Collision(player, enemy3)) {
-			done = true;
+		if(enemy3.isAlive){
+			CheckMovement(enemy3);
+			CollisionPlaEne(player, enemy3);
+			CollisionBulEne(bullet, enemy3);
 		}
-		else if (Collision(player, enemy4)) {
-			done = true;
+		if(enemy4.isAlive){
+			CheckMovement(enemy4);
+			CollisionPlaEne(player, enemy4);
+			CollisionBulEne(bullet, enemy4);
 		}
 
-		CheckMovement(enemy1);
-		CheckMovement(enemy2);
-		CheckMovement(enemy3);
-		CheckMovement(enemy4);
-
-		draw = true;
+		// Checks while loop state
+		if (player.health > 0)
+			draw = true;
+		else
+			done = true;
 	}
 
 	if(draw){
 		draw = false;
 		al_draw_bitmap(player.image, player.x, player.y, 0);
-		al_draw_bitmap(enemy1.image, enemy1.x, enemy1.y, 0);
-		al_draw_bitmap(enemy2.image, enemy2.x, enemy2.y, 0);
-		al_draw_bitmap(enemy3.image, enemy3.x, enemy3.y, 0);
-		al_draw_bitmap(enemy4.image, enemy4.x, enemy4.y, 0);
+		al_draw_bitmap(bullet.image, bullet.x, bullet.y, 0);
+		if(enemy1.isAlive)
+			al_draw_bitmap(enemy1.image, enemy1.x, enemy1.y, 0);
+		if(enemy2.isAlive)
+			al_draw_bitmap(enemy2.image, enemy2.x, enemy2.y, 0);
+		if(enemy3.isAlive)
+			al_draw_bitmap(enemy3.image, enemy3.x, enemy3.y, 0);
+		if(enemy4.isAlive)
+			al_draw_bitmap(enemy4.image, enemy4.x, enemy4.y, 0);
 		al_flip_display();
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 	}
@@ -207,6 +322,7 @@ while (!done){
 
 al_destroy_display(display);
 al_destroy_bitmap(player.image);
+al_destroy_bitmap(bullet.image);
 al_destroy_bitmap(enemy1.image);
 al_destroy_bitmap(enemy2.image);
 al_destroy_bitmap(enemy3.image);
