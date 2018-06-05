@@ -2,6 +2,8 @@
 #include "allegro5/allegro.h"
 #include "allegro5/allegro_image.h"
 #include "allegro5/allegro_native_dialog.h"
+#include "allegro5/allegro_audio.h"
+#include "allegro5/allegro_acodec.h"
 #include "Menu.h"
 
 // Put this here to use them in the functions <------ By Abecasis Alejandro
@@ -24,6 +26,8 @@ struct Player{
 	int oriY; // Original 'y' position.
 	int movSpeed;
 	int health;
+	ALLEGRO_SAMPLE *sndPlaDamaged;
+	ALLEGRO_SAMPLE_INSTANCE *sndPlaDamagedInstance;
 	DirectionPlayer dir;
 };
 struct Bullet {
@@ -33,6 +37,8 @@ struct Bullet {
 	int movSpeed;
 	bool direction; // 'false' moves horizontal, 'true' moves vertical
 	int dirVel;   // '1' moves right or down, '-1' moves up or left, '0' doesn´t move
+	ALLEGRO_SAMPLE *sndShoot;
+	ALLEGRO_SAMPLE_INSTANCE *sndShootInstance;
 };
 struct Enemy {
 	ALLEGRO_BITMAP *image;
@@ -53,6 +59,7 @@ bool CollisionPlaEne(Player &player, Enemy &enemy) {
 		player.health--;
 		player.x = player.oriX;
 		player.y = player.oriY;
+		al_play_sample_instance(player.sndPlaDamagedInstance);
 		return true;
 	}
 }
@@ -102,6 +109,12 @@ if (!display) {
 	return 0;
 }
 
+al_install_keyboard();
+al_install_audio();
+al_init_acodec_addon();
+
+al_reserve_samples(3);
+
 const float fps = 60.0;
 
 bool done = false;
@@ -112,6 +125,13 @@ if (!menu->Portada())
 	done = true;
 delete menu;
 
+ALLEGRO_SAMPLE *ambientMusic = al_load_sample("ambientMusic.wav");
+ALLEGRO_SAMPLE_INSTANCE *ambientMusicInstance = al_create_sample_instance(ambientMusic);
+al_set_sample_instance_playmode(ambientMusicInstance, ALLEGRO_PLAYMODE_LOOP);
+al_attach_sample_instance_to_mixer(ambientMusicInstance, al_get_default_mixer());
+
+
+
 // Elements creation
 Player player;
 player.x = player.oriX = 10;
@@ -119,6 +139,10 @@ player.y = player.oriY = 10;
 player.movSpeed = 4;
 player.health = 3;
 player.dir = RIGHT;
+player.sndPlaDamaged = al_load_sample("playerDamaged.wav");
+player.sndPlaDamagedInstance = al_create_sample_instance(player.sndPlaDamaged);
+al_set_sample_instance_playmode(ambientMusicInstance, ALLEGRO_PLAYMODE_ONCE);
+al_attach_sample_instance_to_mixer(ambientMusicInstance, al_get_default_mixer());
 
 Bullet bullet;
 bullet.x = -8;
@@ -126,6 +150,10 @@ bullet.y = -8;
 bullet.movSpeed = 8;
 bullet.direction = false;
 bullet.dirVel = 0;
+bullet.sndShoot = al_load_sample("shoot.wav");
+bullet.sndShootInstance = al_create_sample_instance(bullet.sndShoot);
+al_set_sample_instance_playmode(ambientMusicInstance, ALLEGRO_PLAYMODE_ONCE);
+al_attach_sample_instance_to_mixer(ambientMusicInstance, al_get_default_mixer());
 
 Enemy enemy1;
 enemy1.x = 200;
@@ -169,13 +197,13 @@ if (!player.image || !bullet.image || !enemy1.image || !enemy2.image || !enemy3.
 	return 0;
 }
 
-al_install_keyboard();
-
 ALLEGRO_KEYBOARD_STATE keystate;
 ALLEGRO_TIMER *timer = al_create_timer(1.0/fps);
 ALLEGRO_EVENT_QUEUE *eventQueue = al_create_event_queue();
 al_register_event_source(eventQueue, al_get_keyboard_event_source());
 al_register_event_source(eventQueue, al_get_timer_event_source(timer));
+
+al_play_sample_instance(ambientMusicInstance);
 
 al_start_timer(timer);
 
@@ -216,6 +244,7 @@ while (!done){
 		}
 		if (al_key_down(&keystate, ALLEGRO_KEY_SPACE)){
 			if (bullet.dirVel == 0){
+				al_play_sample_instance(bullet.sndShootInstance);
 				switch (player.dir) // Checks the actually player's moving direction
 				{
 				case UP:
@@ -327,6 +356,9 @@ al_destroy_bitmap(enemy1.image);
 al_destroy_bitmap(enemy2.image);
 al_destroy_bitmap(enemy3.image);
 al_destroy_bitmap(enemy4.image);
+al_destroy_sample(player.sndPlaDamaged);
+al_destroy_sample(ambientMusic);
+al_destroy_sample_instance(ambientMusicInstance);
 al_destroy_timer(timer);
 
 return 0;
