@@ -1,13 +1,6 @@
 #include "Menu.h"
 
 // Menu_Image proportions (600 x 400)
-
-Menu::Menu() {
-
-}
-Menu::~Menu() {
-
-}
 bool Menu::Portada() {
 
 	ALLEGRO_BITMAP* menuImage;
